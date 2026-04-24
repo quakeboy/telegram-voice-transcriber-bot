@@ -24,6 +24,7 @@ A Python bot that listens to voice messages on Telegram, transcribes them locall
 ## Requirements
 
 - Python 3.8+
+- ffmpeg (required by Whisper to decode audio): `brew install ffmpeg`
 - Telegram bot token (get from [BotFather](https://t.me/botfather))
 - Whisper model pre-installed (see Setup)
 
