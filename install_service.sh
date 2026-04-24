@@ -39,6 +39,11 @@ cat > "$PLIST_FILE" << EOF
         <string>$PYTHON_PATH</string>
         <string>$SCRIPT_DIR/bot.py</string>
     </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>StandardOutPath</key>
