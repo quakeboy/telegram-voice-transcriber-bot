@@ -1,0 +1,25 @@
+telegram:
+  bot_token: "YOUR_BOT_TOKEN_HERE"
+  polling_interval_seconds: 5
+  allowed_user_ids: []         # leave empty to allow all users, or list Telegram user IDs
+
+paths:
+  workspace: "./transcriber_data"
+  timezone_offset_hours: 0     # UTC offset for file timestamps (e.g. 4 for UTC+4)
+
+audio:
+  max_files: 20                # rotate oldest .ogg files beyond this count
+  delete_failed_audio: false
+
+whisper:
+  model: "base"                # tiny / base / small / medium / large
+  language: "en"
+  timeout_seconds: 300
+
+retry:
+  max_attempts: 3
+  initial_backoff_seconds: 1
+
+logging:
+  level: "INFO"
+  verbose_cleanup: false
