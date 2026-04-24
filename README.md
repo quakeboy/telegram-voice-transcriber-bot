@@ -1,6 +1,14 @@
-# Telegram Voice Transcriber Bot
+# Telegram Voice Transcriber Bot (Local transcription)
+
+> All the transcription happens locally on your machine, so you don't have to pay for any cloud service.
 
 A Python bot that listens to voice messages on Telegram, transcribes them locally using Whisper, and saves transcriptions with timestamps.
+
+## Why?
+
+- Can be used as a personal voice journaling bot. Has to be paired with an LLM for summarizing.
+- Each transcript is saved as its own file with the timestamp and front matter which also has more information. So you can use this to create content on the fly if you pair it up with your daily workflow to either do a vlog or even other forms of content creation.
+- You can pair it up with Claude Cowork so that it can scan the transcribed data at regular intervals and you can do various things with it.
 
 ## Features
 
@@ -39,7 +47,12 @@ python -c "import whisper; whisper.load_model('tiny')"
 
 ### 3. Configure Bot
 
-Edit `config.yaml`:
+Copy the example config and rename it:
+```bash
+cp config.yaml.example config.yaml
+```
+
+Then edit `config.yaml` with the following values:
 ```yaml
 telegram:
   bot_token: "YOUR_BOT_TOKEN_HERE"  # Get from BotFather
