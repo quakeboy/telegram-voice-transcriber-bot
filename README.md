@@ -42,8 +42,11 @@ pip install -r requirements.txt
 # Download base model (recommended, ~140MB)
 python -c "import whisper; whisper.load_model('base')"
 
-# Or choose: tiny (39MB), small (77MB), medium (377MB), large (2.9GB)
+# Or choose: tiny (39MB), small (~150MB), medium (~387MB), large (2.9GB)
 python -c "import whisper; whisper.load_model('tiny')"
+
+# turbo is a faster distilled version of large (~809M parameters, ~640MB file)
+python -c "import whisper; whisper.load_model('turbo')"
 ```
 
 ### 3. Configure Bot
@@ -92,7 +95,7 @@ nohup python bot.py > transcriber_data/logs/bot.log 2>&1 &
 - `delete_failed_audio`: Delete audio if transcription fails (default: false)
 
 ### whisper
-- `model`: Model size (tiny, base, small, medium, large)
+- `model`: Model size (tiny, base, small, medium, large, turbo)
 - `language`: Language code (en, fr, es, etc.)
 - `timeout_seconds`: Max transcription time per file
 

@@ -55,7 +55,7 @@ audio:
   delete_failed_audio: false
 
 whisper:
-  model: "base"                # tiny / base / small / medium / large
+  model: "base"                # tiny / base / small / medium / large / turbo
   language: "en"
   timeout_seconds: 300
 
