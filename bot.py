@@ -4,6 +4,7 @@ import logging
 import time
 import signal
 import sys
+from datetime import datetime
 from pathlib import Path
 import yaml
 
@@ -101,6 +102,27 @@ def main():
                         sender_username=update["username"]
                     )
 
+                    received_time = datetime.fromtimestamp(update["timestamp"].timestamp()).strftime("%H:%M")
+                    duration_seconds = int(update["duration"])
+                    if duration_seconds >= 60:
+                        minutes = duration_seconds // 60
+                        seconds = duration_seconds % 60
+                        duration_str = f"{minutes}m{seconds}s"
+                    else:
+                        duration_str = f"{duration_seconds}s"
+
+                    status_message_id = await telegram_handler.send_message(
+                        user_id=update["user_id"],
+                        text=f"📥 Audio received ({duration_str}, {received_time})\nStarting transcription..."
+                    )
+
+                    if status_message_id:
+                        await telegram_handler.edit_message(
+                            user_id=update["user_id"],
+                            message_id=status_message_id,
+                            text=f"⏳ Transcribing... ({duration_str}, {received_time})"
+                        )
+
                     transcribed_text = transcriber.transcribe_with_retry(audio_filepath)
 
                     if transcribed_text:
@@ -117,8 +139,20 @@ def main():
                             transcribed_text=transcribed_text,
                             metadata=metadata
                         )
+                        if status_message_id:
+                            await telegram_handler.edit_message(
+                                user_id=update["user_id"],
+                                message_id=status_message_id,
+                                text=f"✅ Transcription complete ({duration_str}, {received_time})"
+                            )
                     else:
                         logger.warning(f"No transcription for {Path(audio_filepath).name}")
+                        if status_message_id:
+                            await telegram_handler.edit_message(
+                                user_id=update["user_id"],
+                                message_id=status_message_id,
+                                text=f"❌ Transcription failed ({duration_str}, {received_time})\nRetried {config['retry']['max_attempts']} times. Please try again."
+                            )
                         if config["audio"]["delete_failed_audio"]:
                             Path(audio_filepath).unlink()
                             logger.info(f"Deleted failed audio file: {Path(audio_filepath).name}")

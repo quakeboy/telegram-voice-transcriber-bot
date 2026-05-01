@@ -55,3 +55,21 @@ class TelegramHandler:
         except TelegramError as e:
             logger.error(f"Failed to download voice file {file_id}: {e}")
             return None
+
+    async def send_message(self, user_id: int, text: str) -> Optional[str]:
+        """Send a message to user. Returns message_id on success or None on error."""
+        try:
+            message = await self.bot.send_message(chat_id=user_id, text=text, parse_mode="Markdown")
+            return str(message.message_id)
+        except TelegramError as e:
+            logger.error(f"Failed to send message to user {user_id}: {e}")
+            return None
+
+    async def edit_message(self, user_id: int, message_id: str, text: str) -> bool:
+        """Edit an existing message. Returns True on success, False on error."""
+        try:
+            await self.bot.edit_message_text(chat_id=user_id, message_id=int(message_id), text=text, parse_mode="Markdown")
+            return True
+        except TelegramError as e:
+            logger.warning(f"Failed to edit message {message_id} for user {user_id}: {e}")
+            return False
