@@ -37,6 +37,7 @@ class TelegramHandler:
                     "voice_file_id": update.message.voice.file_id,
                     "duration": update.message.voice.duration,
                     "timestamp": update.message.date,
+                    "message_id": update.message.message_id,
                 })
                 logger.info(f"Received voice from {voice_updates[-1]['username']} (ID: {user_id})")
 
@@ -56,10 +57,10 @@ class TelegramHandler:
             logger.error(f"Failed to download voice file {file_id}: {e}")
             return None
 
-    async def send_message(self, user_id: int, text: str) -> Optional[str]:
+    async def send_message(self, user_id: int, text: str, reply_to_message_id: Optional[int] = None) -> Optional[str]:
         """Send a message to user. Returns message_id on success or None on error."""
         try:
-            message = await self.bot.send_message(chat_id=user_id, text=text, parse_mode="Markdown")
+            message = await self.bot.send_message(chat_id=user_id, text=text, parse_mode="Markdown", reply_to_message_id=reply_to_message_id)
             return str(message.message_id)
         except TelegramError as e:
             logger.error(f"Failed to send message to user {user_id}: {e}")

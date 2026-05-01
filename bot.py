@@ -113,7 +113,8 @@ def main():
 
                     status_message_id = await telegram_handler.send_message(
                         user_id=update["user_id"],
-                        text=f"📥 Audio received ({duration_str}, {received_time})\nStarting transcription..."
+                        text=f"📥 Audio received ({duration_str}, {received_time})\nStarting transcription...",
+                        reply_to_message_id=update["message_id"]
                     )
 
                     if status_message_id:
