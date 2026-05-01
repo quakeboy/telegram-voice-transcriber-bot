@@ -4,6 +4,10 @@
 
 A Python bot that listens to voice messages on Telegram, transcribes them locally using Whisper, and saves transcriptions with timestamps.
 
+## Latest Updates
+
+**2026-05-01**: Added real-time status notifications — bot now sends messages when audio is received, transcription starts, and when it completes or fails.
+
 ## Why?
 
 - Can be used as a personal voice journaling bot. Has to be paired with an LLM for summarizing.
