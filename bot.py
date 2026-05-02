@@ -7,6 +7,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 import yaml
+import tiktoken
 
 from logger_config import setup_logger
 from telegram_handler import TelegramHandler
@@ -14,6 +15,7 @@ from transcriber import Transcriber
 from file_manager import FileManager
 
 logger = None
+tokenizer = None
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
@@ -37,7 +39,7 @@ def validate_config(config: dict) -> bool:
 
 
 def main():
-    global logger
+    global logger, tokenizer
 
     try:
         config = load_config()
@@ -56,6 +58,7 @@ def main():
     log_level = config["logging"]["level"]
 
     logger = setup_logger(log_folder, log_level)
+    tokenizer = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
     if not config["telegram"]["bot_token"] or config["telegram"]["bot_token"] == "YOUR_BOT_TOKEN_HERE":
         logger.error("Bot token not configured. Please set it in config.yaml")
@@ -127,6 +130,7 @@ def main():
                     transcribed_text = transcriber.transcribe_with_retry(audio_filepath)
 
                     if transcribed_text:
+                        token_count = len(tokenizer.encode(transcribed_text))
                         metadata = {
                             "sender_name": update["first_name"],
                             "sender_username": update["username"],
@@ -134,6 +138,7 @@ def main():
                             "telegram_timestamp": str(update["timestamp"]),
                             "audio_duration_seconds": update["duration"],
                             "transcription_timestamp": str(time.time()),
+                            "token_count": token_count,
                         }
                         file_manager.save_transcription(
                             timestamp=update["timestamp"],
