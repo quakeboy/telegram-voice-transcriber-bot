@@ -6,7 +6,9 @@ A Python bot that listens to voice messages on Telegram, transcribes them locall
 
 ## Latest Updates
 
-**2026-05-14**: Switched transcription backend from `openai-whisper` (CPU) to `mlx-whisper` (Apple Silicon GPU/Neural Engine). Benchmarks on real messages: **1.5–1.6× faster on ~6-minute clips** (13s vs 20–21s end-to-end), and **2.8× faster on 1-minute clips** (8.3s vs 23.2s transcription-only, `small` model). Actual transcription speedup is higher since end-to-end times include a fixed Telegram file download overhead.
+**2026-05-14**: Switched transcription backend from `openai-whisper` (CPU) to `mlx-whisper` (Apple Silicon GPU/Neural Engine). Benchmarks on real messages: **1.5–1.6× faster on ~6-minute clips** (13s vs 20–21s end-to-end), and **2.8× faster on 1-minute clips** (8.3s vs 23.2s transcription-only, `small` model). Actual transcription speedup is higher since end-to-end times include a fixed Telegram file download overhead. Note: this makes the bot **Apple Silicon only** — see [Windows/Linux](#windowslinux) below if you need cross-platform support.
+
+**2026-05-02**: Each transcription now includes a `token_count` field (tiktoken) in its frontmatter — useful for batching transcriptions into large-context LLMs without hitting token limits.
 
 **2026-05-01**: Added real-time status notifications — bot now sends messages when audio is received, transcription starts, and when it completes or fails.
 
@@ -30,9 +32,13 @@ A Python bot that listens to voice messages on Telegram, transcribes them locall
 ## Requirements
 
 - Python 3.8+
-- Apple Silicon Mac (M1 or later) — required for mlx-whisper
+- **Apple Silicon Mac (M1 or later)** — required for mlx-whisper
 - ffmpeg (required to decode audio): `brew install ffmpeg`
 - Telegram bot token (get from [BotFather](https://t.me/botfather))
+
+### Windows/Linux
+
+The bot works on Windows and Linux with a small code change: swap `mlx-whisper` for `openai-whisper` in `requirements.txt`, and in `transcriber.py` replace the `mlx_whisper.transcribe()` call with `whisper.load_model(...).transcribe(...)`. Everything else (Telegram polling, file saving, service management) is platform-agnostic. Performance will be slower since `openai-whisper` runs on CPU.
 
 ## Setup
 
@@ -132,6 +138,7 @@ Each transcription has a YAML file with:
 - `telegram_timestamp`: When message was sent
 - `audio_duration_seconds`: Voice note length
 - `transcription_timestamp`: When transcription completed
+- `token_count`: Token count of the transcribed text (tiktoken, ~1–3% accurate for English LLM batching)
 
 ## Manage Service (macOS)
 
