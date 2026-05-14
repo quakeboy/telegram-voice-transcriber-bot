@@ -89,10 +89,13 @@ sender_username: rajavanya
 sender_user_id: 123456789
 telegram_timestamp: '2026-04-24 06:29:31+00:00'
 transcription_timestamp: '1745486971.123'
+token_count: 42
 ---
 
 Transcribed text goes here.
 ```
+
+**Token counting**: Each transcription includes a `token_count` field (tiktoken encoding, ~1-3% accurate for Qwen3.5 9B with English text). Use this for batching transcriptions into large-context models.
 
 ## Key conventions
 
@@ -108,4 +111,4 @@ Transcribed text goes here.
 pip install -r requirements.txt
 ```
 
-Requires: `python-telegram-bot>=20.0`, `mlx-whisper>=0.4.0`, `pyyaml>=6.0`
+Requires: `python-telegram-bot>=20.0`, `mlx-whisper>=0.4.0`, `pyyaml>=6.0`, `tiktoken>=0.5.0`
