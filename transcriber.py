@@ -1,11 +1,19 @@
 import logging
 import time
-import tempfile
 from pathlib import Path
 from typing import Optional
-import whisper
+import mlx_whisper
 
 logger = logging.getLogger("transcriber")
+
+_MLX_REPOS = {
+    "tiny":   "mlx-community/whisper-tiny-mlx",
+    "base":   "mlx-community/whisper-base-mlx",
+    "small":  "mlx-community/whisper-small-mlx",
+    "medium": "mlx-community/whisper-medium-mlx",
+    "large":  "mlx-community/whisper-large-mlx",
+    "turbo":  "mlx-community/whisper-large-v3-turbo",
+}
 
 
 class Transcriber:
@@ -17,18 +25,15 @@ class Transcriber:
         initial_backoff: int,
         timeout_seconds: int
     ):
-        self.model_name = model_name
         self.language = language
         self.max_attempts = max_attempts
         self.initial_backoff = initial_backoff
         self.timeout_seconds = timeout_seconds
 
-        try:
-            self.model = whisper.load_model(model_name)
-            logger.info(f"Whisper model '{model_name}' loaded successfully")
-        except Exception as e:
-            logger.error(f"Failed to load Whisper model '{model_name}': {e}")
-            raise
+        if model_name not in _MLX_REPOS:
+            raise ValueError(f"Unknown model '{model_name}'. Choose from: {', '.join(_MLX_REPOS)}")
+        self.hf_repo = _MLX_REPOS[model_name]
+        logger.info(f"Whisper model '{model_name}' ({self.hf_repo}) will load on first transcription")
 
     def transcribe_with_retry(self, audio_filepath: str) -> Optional[str]:
         """Transcribe audio with exponential backoff retry. Returns transcribed text or None."""
@@ -37,10 +42,10 @@ class Transcriber:
         for attempt in range(1, self.max_attempts + 1):
             try:
                 logger.debug(f"Transcription attempt {attempt}/{self.max_attempts} for {Path(audio_filepath).name}")
-                result = self.model.transcribe(
+                result = mlx_whisper.transcribe(
                     audio_filepath,
+                    path_or_hf_repo=self.hf_repo,
                     language=self.language,
-                    fp16=False
                 )
                 return result["text"].strip()
 

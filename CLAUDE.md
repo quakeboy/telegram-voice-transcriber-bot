@@ -106,4 +106,4 @@ Transcribed text goes here.
 pip install -r requirements.txt
 ```
 
-Requires: `python-telegram-bot>=20.0`, `openai-whisper>=20240314`, `pyyaml>=6.0`
+Requires: `python-telegram-bot>=20.0`, `mlx-whisper>=0.4.0`, `pyyaml>=6.0`

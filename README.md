@@ -6,6 +6,8 @@ A Python bot that listens to voice messages on Telegram, transcribes them locall
 
 ## Latest Updates
 
+**2026-05-14**: Switched transcription backend from `openai-whisper` (CPU) to `mlx-whisper` (Apple Silicon GPU/Neural Engine) — ~2.8× faster on typical short voice messages.
+
 **2026-05-01**: Added real-time status notifications — bot now sends messages when audio is received, transcription starts, and when it completes or fails.
 
 ## Why?
@@ -28,9 +30,9 @@ A Python bot that listens to voice messages on Telegram, transcribes them locall
 ## Requirements
 
 - Python 3.8+
-- ffmpeg (required by Whisper to decode audio): `brew install ffmpeg`
+- Apple Silicon Mac (M1 or later) — required for mlx-whisper
+- ffmpeg (required to decode audio): `brew install ffmpeg`
 - Telegram bot token (get from [BotFather](https://t.me/botfather))
-- Whisper model pre-installed (see Setup)
 
 ## Setup
 
@@ -40,17 +42,17 @@ A Python bot that listens to voice messages on Telegram, transcribes them locall
 pip install -r requirements.txt
 ```
 
-### 2. Download Whisper Model
+### 2. Pre-download Whisper Model
+
+Models are downloaded from Hugging Face on first use and cached locally. Pre-download before starting the service to avoid a delay on the first transcription:
 
 ```bash
-# Download base model (recommended, ~140MB)
-python -c "import whisper; whisper.load_model('base')"
+# base model (recommended, ~290MB)
+python3 -c "import mlx_whisper; mlx_whisper.transcribe('/dev/null', path_or_hf_repo='mlx-community/whisper-base-mlx')"
 
-# Or choose: tiny (39MB), small (~150MB), medium (~387MB), large (2.9GB)
-python -c "import whisper; whisper.load_model('tiny')"
-
-# turbo is a faster distilled version of large (~809M parameters, ~640MB file)
-python -c "import whisper; whisper.load_model('turbo')"
+# Other sizes: whisper-tiny-mlx, whisper-small-mlx, whisper-medium-mlx, whisper-large-mlx
+# turbo (large-v3 distilled, fast + accurate):
+python3 -c "import mlx_whisper; mlx_whisper.transcribe('/dev/null', path_or_hf_repo='mlx-community/whisper-large-v3-turbo')"
 ```
 
 ### 3. Configure Bot
@@ -166,8 +168,8 @@ python bot.py
 - Ensure `config.yaml` has a valid bot token (not the placeholder)
 
 ### Whisper model not found
-- Download model: `python -c "import whisper; whisper.load_model('base')"`
-- Check disk space (large models need 2-3GB)
+- Pre-download the model: `python3 -c "import mlx_whisper; mlx_whisper.transcribe('/dev/null', path_or_hf_repo='mlx-community/whisper-base-mlx')"`
+- Check disk space (large models need 1-3GB)
 
 ### Voice file not transcribing
 - Check file size (should be < 25MB)
