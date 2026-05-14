@@ -72,7 +72,9 @@ class FileManager:
         with open(md_file, "w") as f:
             f.write(f"---\n{frontmatter}\n---\n\n{transcribed_text}\n")
 
-        logger.info(f"Transcription complete: {base_name}")
+        dur = metadata.get("audio_duration_seconds", 0)
+        dur_str = f"{dur // 60}m{dur % 60}s" if dur >= 60 else f"{dur}s"
+        logger.info(f"Transcription complete: {base_name} ({dur_str})")
 
     def get_audio_file_path(self, filename: str) -> str:
         """Return full path to audio file."""

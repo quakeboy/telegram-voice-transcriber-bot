@@ -39,7 +39,9 @@ class TelegramHandler:
                     "timestamp": update.message.date,
                     "message_id": update.message.message_id,
                 })
-                logger.info(f"Received voice from {voice_updates[-1]['username']} (ID: {user_id})")
+                dur = update.message.voice.duration
+                dur_str = f"{dur // 60}m{dur % 60}s" if dur >= 60 else f"{dur}s"
+                logger.info(f"Received voice from {voice_updates[-1]['username']} (ID: {user_id}), duration: {dur_str}")
 
             return voice_updates
 

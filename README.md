@@ -6,7 +6,7 @@ A Python bot that listens to voice messages on Telegram, transcribes them locall
 
 ## Latest Updates
 
-**2026-05-14**: Switched transcription backend from `openai-whisper` (CPU) to `mlx-whisper` (Apple Silicon GPU/Neural Engine) — ~2.8× faster on typical short voice messages.
+**2026-05-14**: Switched transcription backend from `openai-whisper` (CPU) to `mlx-whisper` (Apple Silicon GPU/Neural Engine). Benchmarks on real messages: **1.5–1.6× faster on ~6-minute clips** (13s vs 20–21s end-to-end), and **2.8× faster on 1-minute clips** (8.3s vs 23.2s transcription-only, `small` model). Actual transcription speedup is higher since end-to-end times include a fixed Telegram file download overhead.
 
 **2026-05-01**: Added real-time status notifications — bot now sends messages when audio is received, transcription starts, and when it completes or fails.
 
