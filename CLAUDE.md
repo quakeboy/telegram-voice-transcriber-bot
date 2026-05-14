@@ -1,6 +1,6 @@
 # Telegram Voice Transcriber Bot
 
-A Telegram bot that polls for voice messages and transcribes them using OpenAI Whisper. Transcriptions are saved as Markdown files with YAML frontmatter.
+A Telegram bot that polls for voice messages and transcribes them locally using mlx-whisper (Apple Silicon). Transcriptions are saved as Markdown files with YAML frontmatter.
 
 ## Running the bot
 
@@ -32,7 +32,7 @@ launchctl stop com.local.transcriber && launchctl start com.local.transcriber
 |------|---------|
 | `bot.py` | Entry point — async polling loop |
 | `telegram_handler.py` | Telegram API wrapper (async, python-telegram-bot v20+) |
-| `transcriber.py` | Whisper model wrapper with exponential-backoff retry |
+| `transcriber.py` | mlx-whisper wrapper with exponential-backoff retry; maps model names to HF repos |
 | `file_manager.py` | Saves audio files and transcription `.md` files; handles timezone conversion |
 | `logger_config.py` | Rotating file + console logger setup |
 | `config.yaml` | All runtime configuration |
@@ -99,6 +99,8 @@ Transcribed text goes here.
 - **Async API**: `python-telegram-bot` v20+ is fully async. All Telegram calls in `telegram_handler.py` use `await`. The main loop runs under `asyncio.run()`.
 - **Timestamps**: Telegram sends UTC datetimes. `timezone_offset_hours` in config converts them to local time for filenames.
 - **Single output file**: Transcriptions and metadata are stored together in one `.md` file (no separate `.yaml`).
+- **mlx-whisper model names**: `config.yaml` uses short names (`tiny`/`base`/`small`/`medium`/`large`/`turbo`). `transcriber.py` maps these to `mlx-community/whisper-<name>-mlx` HF repos. Models are downloaded on first use and cached by HuggingFace. Requires Apple Silicon (M1+).
+- **benchmark_whisper.py**: Standalone benchmark script comparing openai-whisper vs mlx-whisper. Benchmarked 2026-05-14: mlx-whisper was 2.8× faster on a 1-min file (8.3s vs 23.2s, `small` model).
 
 ## Dependencies
 
