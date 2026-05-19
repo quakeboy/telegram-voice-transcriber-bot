@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 import asyncio
+import json
 import logging
 import time
 import signal
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 import yaml
 import tiktoken
+from setproctitle import setproctitle
 
 from logger_config import setup_logger
 from telegram_handler import TelegramHandler
-from transcriber import Transcriber
 from file_manager import FileManager
 
 logger = None
@@ -41,6 +43,8 @@ def validate_config(config: dict) -> bool:
 def main():
     global logger, tokenizer
 
+    setproctitle("telegram-voice-transcriber")
+
     try:
         config = load_config()
     except FileNotFoundError:
@@ -57,7 +61,7 @@ def main():
     log_folder = str(Path(workspace) / "logs")
     log_level = config["logging"]["level"]
 
-    logger = setup_logger(log_folder, log_level)
+    logger = setup_logger(log_folder, log_level, log_name="bot")
     tokenizer = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
     if not config["telegram"]["bot_token"] or config["telegram"]["bot_token"] == "YOUR_BOT_TOKEN_HERE":
@@ -68,13 +72,6 @@ def main():
         telegram_handler = TelegramHandler(
             bot_token=config["telegram"]["bot_token"],
             allowed_user_ids=config["telegram"].get("allowed_user_ids", [])
-        )
-        transcriber = Transcriber(
-            model_name=config["whisper"]["model"],
-            language=config["whisper"]["language"],
-            max_attempts=config["retry"]["max_attempts"],
-            initial_backoff=config["retry"]["initial_backoff_seconds"],
-            timeout_seconds=config["whisper"]["timeout_seconds"]
         )
         file_manager = FileManager(
             workspace=workspace,
@@ -89,14 +86,82 @@ def main():
     polling_interval = config["telegram"]["polling_interval_seconds"]
     logger.info(f"Bot started, polling every {polling_interval} seconds...")
 
+    async def subprocess_transcribe(
+        audio_path: str,
+        model: str,
+        language: str,
+        max_attempts: int,
+        initial_backoff: int,
+        timeout_seconds: int
+    ) -> Optional[str]:
+        """Transcribe audio via subprocess, with exponential backoff retry."""
+        backoff = initial_backoff
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    "python3", "transcriber_worker.py",
+                    stdin=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd=Path(__file__).parent
+                )
+
+                request = json.dumps({
+                    "audio_path": audio_path,
+                    "model": model,
+                    "language": language,
+                    "max_attempts": max_attempts,
+                    "initial_backoff_seconds": initial_backoff
+                })
+
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(request.encode()),
+                    timeout=timeout_seconds
+                )
+
+                if proc.returncode == 0:
+                    result = json.loads(stdout)
+                    logger.debug(f"Subprocess transcription successful: {result.get('token_count', 0)} tokens")
+                    return result["text"]
+                else:
+                    error_data = json.loads(stderr) if stderr else {}
+                    error_msg = error_data.get("error", "Unknown error")
+                    raise Exception(error_msg)
+
+            except asyncio.TimeoutError:
+                error_msg = f"Subprocess transcription timed out after {timeout_seconds} seconds"
+                if attempt < max_attempts:
+                    logger.warning(f"Transcription attempt {attempt}/{max_attempts} timed out")
+                    await asyncio.sleep(backoff)
+                    backoff *= 2
+                else:
+                    logger.error(error_msg)
+                    return None
+            except Exception as e:
+                if attempt < max_attempts:
+                    logger.warning(f"Transcription attempt {attempt}/{max_attempts} failed: {e}")
+                    logger.debug(f"Retrying in {backoff} seconds...")
+                    await asyncio.sleep(backoff)
+                    backoff *= 2
+                else:
+                    logger.error(f"Transcription failed after {max_attempts} attempts: {e}")
+                    return None
+
+        return None
+
     async def run_bot():
         while True:
             try:
                 updates = await telegram_handler.get_voice_updates()
 
                 for update in updates:
+                    sender = update.get("username") or update.get("first_name", "Unknown")
+                    logger.info(f"Received voice from {sender} (ID: {update['user_id']}), duration: {update['duration']}s")
+
                     audio_data = await telegram_handler.download_voice_file(update["voice_file_id"])
                     if audio_data is None:
+                        logger.warning(f"Failed to download voice file for {sender}")
                         continue
 
                     audio_filepath = file_manager.save_audio(
@@ -104,6 +169,7 @@ def main():
                         timestamp=update["timestamp"],
                         sender_username=update["username"]
                     )
+                    logger.debug(f"Audio saved: {audio_filepath}")
 
                     received_time = datetime.fromtimestamp(update["timestamp"].timestamp()).strftime("%H:%M")
                     duration_seconds = int(update["duration"])
@@ -127,10 +193,20 @@ def main():
                             text=f"⏳ Transcribing... ({duration_str}, {received_time})"
                         )
 
-                    transcribed_text = transcriber.transcribe_with_retry(audio_filepath)
+                    logger.info(f"Starting transcription subprocess for {sender} ({duration_str})")
+                    transcribed_text = await subprocess_transcribe(
+                        audio_filepath,
+                        model=config["whisper"]["model"],
+                        language=config["whisper"]["language"],
+                        max_attempts=config["retry"]["max_attempts"],
+                        initial_backoff=config["retry"]["initial_backoff_seconds"],
+                        timeout_seconds=config["whisper"]["timeout_seconds"]
+                    )
 
                     if transcribed_text:
                         token_count = len(tokenizer.encode(transcribed_text))
+                        logger.info(f"Transcription complete for {sender}: {token_count} tokens, {len(transcribed_text)} chars")
+
                         metadata = {
                             "sender_name": update["first_name"],
                             "sender_username": update["username"],
@@ -145,6 +221,8 @@ def main():
                             transcribed_text=transcribed_text,
                             metadata=metadata
                         )
+                        logger.debug(f"Saved transcription file for {sender}")
+
                         if status_message_id:
                             await telegram_handler.edit_message(
                                 user_id=update["user_id"],
