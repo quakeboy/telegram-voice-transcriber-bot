@@ -10,7 +10,7 @@ _MLX_REPOS = {
     "tiny":   "mlx-community/whisper-tiny-mlx",
     "base":   "mlx-community/whisper-base-mlx",
     "small":  "mlx-community/whisper-small-mlx",
-    "small-q8":  "mlx-community/whisper-small-mlx-q8",
+    "small-q8":  "mlx-community/whisper-small.en-mlx-8bit",
     "medium": "mlx-community/whisper-medium-mlx",
     "large":  "mlx-community/whisper-large-mlx",
     "turbo":  "mlx-community/whisper-large-v3-turbo",
