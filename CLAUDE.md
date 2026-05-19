@@ -55,7 +55,7 @@ audio:
   delete_failed_audio: false
 
 whisper:
-  model: "base"                # tiny / base / small / medium / large / turbo
+  model: "small-q8"            # tiny / base / small / small-q8 / medium / large / turbo
   language: "en"
   timeout_seconds: 300
 
@@ -102,7 +102,7 @@ Transcribed text goes here.
 - **Async API**: `python-telegram-bot` v20+ is fully async. All Telegram calls in `telegram_handler.py` use `await`. The main loop runs under `asyncio.run()`.
 - **Timestamps**: Telegram sends UTC datetimes. `timezone_offset_hours` in config converts them to local time for filenames.
 - **Single output file**: Transcriptions and metadata are stored together in one `.md` file (no separate `.yaml`).
-- **mlx-whisper model names**: `config.yaml` uses short names (`tiny`/`base`/`small`/`medium`/`large`/`turbo`). `transcriber.py` maps these to `mlx-community/whisper-<name>-mlx` HF repos. Models are downloaded on first use and cached by HuggingFace. Requires Apple Silicon (M1+).
+- **mlx-whisper model names**: `config.yaml` uses short names (`tiny`/`base`/`small`/`small-q8`/`medium`/`large`/`turbo`). `transcriber.py` maps these to `mlx-community/whisper-<name>-mlx` HF repos. Models are downloaded on first use and cached by HuggingFace. Requires Apple Silicon (M1+). `small-q8` is a quantized variant using ~450-600 MB instead of ~850-1200 MB with negligible quality loss.
 - **benchmark_whisper.py**: Standalone benchmark script comparing openai-whisper vs mlx-whisper. Benchmarked 2026-05-14: mlx-whisper was 2.8× faster on a 1-min file (8.3s vs 23.2s, `small` model).
 
 ## Dependencies
